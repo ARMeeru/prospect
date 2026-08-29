@@ -1,18 +1,16 @@
 # prospect
 
-Mines verified coding-agent task instances from a git repository's real fix history, and emits them in [Harbor](https://github.com/harbor-framework/harbor) task format.
+Turns your repository's fix history into benchmark tasks for coding agents, saved in [Harbor](https://github.com/harbor-framework/harbor) format.
 
-For every merged commit that changed both source and tests — or a test-only "failing property" commit followed by its fix — prospect:
+Here's the idea. Every merged commit that touched both source and tests is a small, self-contained proof of work: someone changed the code, added tests, and those tests pass. prospect walks that history, checks out the parent of each such commit, adds the tests the fix introduced, and keeps only the instances where those tests compile against the old code and actually fail on it. The fix itself becomes the reference solution. What comes out the other end is a Harbor task directory per fix — instruction, environment, hidden tests, reference patch — ready to run against any agent Harbor supports.
 
-1. constructs the **base state** (parent commit, or the test commit itself) and overlays the reference tests,
-2. applies a **compile probe** — interface-coupled fixes whose tests can't build on the base are discarded in seconds, with zero judgment,
-3. **behaviorally verifies** fail-before (base) and pass-after (fix) inside containers, with service containers parsed from the repo's own GitHub Actions workflow,
-4. asserts a **failure witness** — the base run must fail at the assertion level (`--- FAIL: <expected test>`), not via build errors or environment noise,
-5. emits a Harbor task: `instruction.md`, `task.toml`, `environment/` (base snapshot + Dockerfile), `tests/` (hidden reference tests + `test.sh` writing a reward file), `solution/` (reference patch + `solve.sh`).
+## Why
+
+Public benchmarks tell you how agents do on someone else's tasks. That's useful for picking a model off a leaderboard and mostly useless for picking one for your codebase. If your real question is "which model handles our kind of work," the honest answer comes from testing on fixes from your own history: real bugs, real tests, known-good solutions.
 
 ## Results
 
-294 verified instances across 7 repositories in one pass (2026-08-28):
+294 verified instances from 7 repositories, mined in a single pass (2026-08-28):
 
 | repository | post-cutoff candidates | compile-probe survivors | verified instances |
 |---|---|---|---|
@@ -25,9 +23,9 @@ For every merged commit that changed both source and tests — or a test-only "f
 | [jackc/pgx](https://github.com/jackc/pgx) | 94 | 58 | 31 |
 | **total** | | | **294** |
 
-Dedup clustering (shared reference test files) reduces raw counts to an effective suite size — e.g. fiber's 203 instances form 24 clusters. Instance counts are post-dedup-labeling; treat clusters, not raw counts, as units of evidence.
+Two honesty notes before you quote these. First, instances that share reference tests measure the same thing, so they're clustered at analysis time — fiber's 203 instances are really about 24 independent observations. Second, every instance above passed container verification with an assertion-level failure witness: the tests provably failed on the old code *at the failing assertion*, not because a build broke.
 
-As an end-to-end demonstration, a 4-week pre-registered dogfood ran these suites through Harbor with claude-code (sonnet-5 vs opus-5, 3 trials per instance, per-run version pinning, origin-fetch audits, weekly over-specificity labeling). Cumulative result: sonnet 69.4%, opus 73.6% — a stable ≤1-point weekly difference, far below the pre-registered 10-point meaningfulness bar — while opus cost 1.87× more. Recorded decision: standardize on sonnet.
+To show the whole loop working end to end, we ran a 4-week pre-registered comparison with claude-code on these suites: sonnet-5 vs opus-5, 3 trials per instance, versions pinned, transcripts audited for origin fetches. Cumulative pass rates were 69% vs 74% — a gap that never exceeded a single point in any week, while opus cost 1.9× more in tokens. That comparison is what this tool is for: a recorded decision instead of a vibes debate.
 
 ## Usage
 
@@ -41,25 +39,22 @@ go build -o prospect .
 ./prospect audit <harbor-jobs-dir> --origin <repo-slug>  # leak audit for closed-book suites
 ```
 
-Results land in `--out`: one directory per task plus `results.json` and `summary.md`.
+Each sweep should also go through `scripts/dogfood-run.sh`, which pins tool and agent versions to a ledger and audits the transcripts afterwards.
 
-## Data policy
+## What it measures (and doesn't)
 
-- **origin_visibility** is recorded per instance. `private` instances: the origin returns 404 to tokenless agents, so PR numbers and repo names in instructions leak nothing — these are closed-book.
-- `public` instances: **open-book by policy.** Default Harbor egress allows an agent to fetch the origin and copy the fix; plus their content predates most model training cutoffs. Public instances are for harness plumbing and within-agent regression only — never cross-vendor ranking.
-- Training contamination is a property of the *model-instance pair*: suites record base-commit dates so evaluation can window to post-cutoff commits.
-- Uncontaminated, closed-book instances can only come from private repos. This column is structurally capped; it is the number that matters and the number we publish first.
+This is a benchmark of **specified changes**: "here is the change, implement it correctly on this codebase." That's the dominant real-world use of coding agents, and it's what the data measures cleanly. It is *not* a bug-diagnosis benchmark — tasks where the agent must find the bug from a symptom are a different pipeline (mining from issue reports instead of fix commits) and may come later.
 
-## Scope statement (read before quoting any number from this tool)
+Two structural facts to keep in mind. The compile probe deliberately throws away fixes where the new tests can't compile against the old interfaces, so the suite systematically excludes the hairy, architectural work where agents differ most. And instances whose tests reference the origin repo are open-book for any agent with network access — those are marked `origin_visibility: public` and shouldn't be used for cross-vendor rankings. Instances from private repos are closed-book (the origin 404s for tokenless agents) and that's the column to trust.
 
-**This is a change-spec benchmark with a bug-report subclass where repos support it.** prospect mines well-scoped behavioral fixes — the compile probe deliberately discards interface-coupled changes, which are exactly where coding agents differ most. It measures "can an agent implement a specified change correctly on my codebase, at what cost," not "can an agent diagnose your repo's bugs." The bug-report subclass requires repos with enforced `Fixes #N` linkage (12 of 294 instances as of 2026-08-28, all public); teams that adopt issue linkage grow their own bug-report suite — issue-first mining is a possible v2.
+Bug-fix diagnosis tasks do exist here, but only for repos where contributors link issues in their PRs (`Fixes #N`) — the instruction then comes from the issue text instead of the fix description. 12 of the 294 instances are in that class. If your team adopts issue linkage, your own mined suite grows that class automatically.
 
-## Limitations
+## Caveats
 
-- **Single language:** Go repos only.
-- **Message-assertion lint:** reference tests asserting on error *text* (rather than behavior) are flagged via `verifier_lint` in meta.json and should be hand-reviewed — a semantically correct fix worded differently can fail such tests.
-- **Dedup is heuristic:** clusters by shared reference test files.
-- **Services:** container environments for service-dependent instances are best-effort (parsed from Actions workflows); instances whose tests need unexported services (e.g. docker-compose-only mailpit) may stay unverified.
+- Go repos only, for now.
+- Instances sharing reference tests are clustered by `prospect dedup`; treat clusters, not raw counts, as units of evidence.
+- Service containers are parsed from the repo's GitHub Actions workflows. Tests that need services declared only in docker-compose (a mailpit instance, say) may stay unverified.
+- The undiagnosed failure from our own runs — one concurrency-heavy fix passed on the host and failed in the container on both alpine and debian — is documented rather than hidden. Verification is strict; when in doubt it throws instances out.
 
 ## License
 
