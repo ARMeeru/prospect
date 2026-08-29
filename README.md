@@ -10,7 +10,7 @@ Public benchmarks tell you how agents do on someone else's tasks. That's useful 
 
 ## Results
 
-294 verified instances from 7 repositories, mined in a single pass (2026-08-28):
+292 witness-verified instances from 7 repositories (294 emitted), mined in a single pass (2026-08-28):
 
 | repository | post-cutoff candidates | compile-probe survivors | verified instances |
 |---|---|---|---|
