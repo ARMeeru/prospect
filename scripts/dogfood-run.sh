@@ -17,7 +17,8 @@ export CLAUDE_FORCE_OAUTH=1
 
 MODEL="${1:?usage: dogfood-run.sh <model> [trials] [suite-root]}"
 TRIALS="${2:-3}"
-SUITE="${3:-$PWD/_suites/prospect-lendleaf}"
+SUITE="${3:-${DOGFOOD_SUITE:-}}"
+[ -n "$SUITE" ] || { echo "error: suite root required (3rd arg) or \$DOGFOOD_SUITE set — e.g. _suites/<name>"; exit 1; }
 STAMP=$(date +%Y%m%d-%H%M%S)
 JOBS="/tmp/dogfood-jobs/$STAMP"
 LEDGER="$PWD/runs/ledger.jsonl"

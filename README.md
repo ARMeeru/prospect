@@ -20,13 +20,13 @@ Results land in `--out`: one directory per task plus `results.json` and `summary
 
 ## Status
 
-Phase 1 v0 — see [ROADMAP](../agent-eval-harness/ROADMAP.md) for gates and results. Validated on two repos (lendleaf-backend: 19 verified instances; spiffe/spire: 11), including reproduction of all three hand-verified instances.
+Phase 1 v0 — see [ROADMAP](../agent-eval-harness/ROADMAP.md) for gates and results. Validated on seven repositories (a private Go backend: 18 closed-book instances; six public Go repos: the rest), including reproduction of all hand-verified instances.
 
 **Scope statement (read before quoting any number from this tool):** **this is a change-spec benchmark with a bug-report subclass where repos support it.** prospect mines well-scoped behavioral fixes — the compile probe deliberately discards interface-coupled changes, which are exactly where coding agents differ most. It measures "can an agent implement a specified change correctly on my codebase, at what cost," not "can an agent diagnose your repo's bugs." The bug-report subclass requires repos with enforced `Fixes #N` linkage (12 of 292 instances as of 2026-08-28, all public); teams that adopt issue linkage grow their own bug-report suite — issue-first mining is a possible v2. Phase-1 external review ruled Gate 1 FAILED on count (19 < 25 on the best repo); all instances are container-verified with assertion-level failure witnesses since the Phase-1.5 witness sweep.
 
 ## Data policy
 
-- **origin_visibility** is recorded per instance. `private` instances (lendleaf-backend): the origin returns 404 to tokenless agents, so PR numbers and repo names in instructions leak nothing — these are closed-book.
+- **origin_visibility** is recorded per instance. `private` instances (from a private Go repository): the origin returns 404 to tokenless agents, so PR numbers and repo names in instructions leak nothing — these are closed-book.
 - `public` instances (spire): **open-book by policy.** Default Harbor egress allows an agent to fetch the origin and copy the fix; plus their content predates most model training cutoffs. Public instances are for harness plumbing and within-agent regression only — never cross-vendor ranking.
 - Training contamination is a property of the *model-instance pair*: suites record base-commit dates so evaluation can window to post-cutoff commits.
 - Uncontaminated, closed-book instances can only come from private repos. This column is structurally capped; it is the number that matters and the number we publish first.
