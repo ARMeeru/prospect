@@ -43,9 +43,15 @@ else
 fi
 
 # --- origin-fetch audit: any reference to the private origin voids trials ---
-# (closed-book suite only; pass --origin "" equivalence by skipping for public roots)
+# (closed-book suite only; public roots skip by policy). Set AUDIT_ORIGIN in
+# the environment to the private repo's slug — it is deliberately NOT stored
+# in this repository.
 case "$(basename "$SUITE")" in
   *spire*|*gin*|*chi*|*echo*|*fiber*|*pgx*) echo "public suite: origin audit skipped (open-book by policy)" ;;
-  *) ./prospect audit "$JOBS" --origin samuraixwandering || echo "VIOLATION RECORDED in ledger context: $STAMP" ;;
+  *) if [ -n "${AUDIT_ORIGIN:-}" ]; then
+       ./prospect audit "$JOBS" --origin "$AUDIT_ORIGIN" || echo "VIOLATION RECORDED in ledger context: $STAMP"
+     else
+       echo "AUDIT_ORIGIN not set — origin-fetch audit skipped"
+     fi ;;
 esac
 echo "sweep $STAMP complete — job dir: $JOBS"
