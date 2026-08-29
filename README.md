@@ -47,14 +47,14 @@ This is a benchmark of specified changes: "here is the change, implement it corr
 
 Two structural facts to keep in mind. The compile probe deliberately throws away fixes where the new tests can't compile against the old interfaces, so the suite systematically excludes the hairy, architectural work where agents differ most. And instances whose tests reference the origin repo are open-book for any agent with network access, so those are marked `origin_visibility: public` and shouldn't be used for cross-vendor rankings. Instances from private repos are closed-book (the origin 404s for tokenless agents), and that's the column to trust.
 
-Bug-fix diagnosis tasks do exist here, but only for repos where contributors link issues in their PRs (`Fixes #N`) — the instruction then comes from the issue text instead of the fix description. 12 of the 294 instances are in that class. If your team adopts issue linkage, your own mined suite grows that class automatically.
+Bug-fix diagnosis tasks do exist here, but only for repos where contributors link issues in their PRs (`Fixes #N`); the instruction then comes from the issue text instead of the fix description. 12 of the 294 instances are in that class. If your team adopts issue linkage, your own mined suite grows that class automatically.
 
 ## Caveats
 
 - Go repos only, for now.
 - Instances sharing reference tests are clustered by `prospect dedup`; treat clusters, not raw counts, as units of evidence.
 - Service containers are parsed from the repo's GitHub Actions workflows. Tests that need services declared only in docker-compose (a mailpit instance, say) may stay unverified.
-- The undiagnosed failure from our own runs — one concurrency-heavy fix passed on the host and failed in the container on both alpine and debian — is documented rather than hidden. Verification is strict; when in doubt it throws instances out.
+- The undiagnosed failure from our own runs (one concurrency-heavy fix passed on the host and failed in the container on both alpine and debian) is documented rather than hidden. Verification is strict; when in doubt it throws instances out.
 
 ## License
 
