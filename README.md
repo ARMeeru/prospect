@@ -2,11 +2,11 @@
 
 Turns your repository's fix history into benchmark tasks for coding agents, saved in [Harbor](https://github.com/harbor-framework/harbor) format.
 
-Here's the idea. Every merged commit that touched both source and tests is a small, self-contained proof of work: someone changed the code, added tests, and those tests pass. prospect walks that history, checks out the parent of each such commit, adds the tests the fix introduced, and keeps only the instances where those tests compile against the old code and actually fail on it. The fix itself becomes the reference solution. What comes out the other end is a Harbor task directory per fix — instruction, environment, hidden tests, reference patch — ready to run against any agent Harbor supports.
+Every merged commit that touched both source and tests is a small, self-contained proof of work: someone changed the code, added tests, and those tests pass. prospect walks that history, checks out the parent of each such commit, adds the tests the fix introduced, and keeps only the instances where those tests compile against the old code and actually fail on it. The fix itself becomes the reference solution. What comes out the other end is a Harbor task directory per fix, with instruction, environment, hidden tests, and reference patch, ready to run against any agent Harbor supports.
 
 ## Why
 
-Public benchmarks tell you how agents do on someone else's tasks. That's useful for picking a model off a leaderboard and mostly useless for picking one for your codebase. If your real question is "which model handles our kind of work," the honest answer comes from testing on fixes from your own history: real bugs, real tests, known-good solutions.
+Public benchmarks tell you how agents do on someone else's tasks. That's useful for picking a model off a leaderboard and mostly useless for picking one for your codebase. If your real question is "which model handles our kind of work," the honest answer comes from testing on fixes from your own history, where the tests already exist and the correct answer is known.
 
 ## Results
 
@@ -23,9 +23,9 @@ Public benchmarks tell you how agents do on someone else's tasks. That's useful 
 | [jackc/pgx](https://github.com/jackc/pgx) | 94 | 58 | 31 |
 | **total** | | | **294** |
 
-Two honesty notes before you quote these. First, instances that share reference tests measure the same thing, so they're clustered at analysis time — fiber's 203 instances are really about 24 independent observations. Second, every instance above passed container verification with an assertion-level failure witness: the tests provably failed on the old code *at the failing assertion*, not because a build broke.
+Two honesty notes on these numbers. First, instances that share reference tests measure the same thing, so they're clustered at analysis time; fiber's 203 instances are really about 24 independent observations. Second, every instance above passed container verification with an assertion-level failure witness: the tests provably failed on the old code *at the failing assertion*, not because a build broke.
 
-To show the whole loop working end to end, we ran a 4-week pre-registered comparison with claude-code on these suites: sonnet-5 vs opus-5, 3 trials per instance, versions pinned, transcripts audited for origin fetches. Cumulative pass rates were 69% vs 74% — a gap that never exceeded a single point in any week, while opus cost 1.9× more in tokens. That comparison is what this tool is for: a recorded decision instead of a vibes debate.
+To show the whole loop working end to end, we ran a 4-week pre-registered comparison with claude-code on these suites: sonnet-5 vs opus-5, 3 trials per instance, versions pinned, transcripts audited for origin fetches. Cumulative pass rates were 69% vs 74%, a gap that never exceeded a single point in any week, while opus cost 1.9× more in tokens. That comparison is the kind of recorded decision this tool exists to produce.
 
 ## Usage
 
@@ -43,9 +43,9 @@ Each sweep should also go through `scripts/dogfood-run.sh`, which pins tool and 
 
 ## What it measures (and doesn't)
 
-This is a benchmark of **specified changes**: "here is the change, implement it correctly on this codebase." That's the dominant real-world use of coding agents, and it's what the data measures cleanly. It is *not* a bug-diagnosis benchmark — tasks where the agent must find the bug from a symptom are a different pipeline (mining from issue reports instead of fix commits) and may come later.
+This is a benchmark of specified changes: "here is the change, implement it correctly on this codebase." That's the dominant real-world use of coding agents, and it's what the data measures cleanly. It is *not* a bug-diagnosis benchmark: tasks where the agent must find the bug from a symptom are a different pipeline (mining from issue reports instead of fix commits) and may come later.
 
-Two structural facts to keep in mind. The compile probe deliberately throws away fixes where the new tests can't compile against the old interfaces, so the suite systematically excludes the hairy, architectural work where agents differ most. And instances whose tests reference the origin repo are open-book for any agent with network access — those are marked `origin_visibility: public` and shouldn't be used for cross-vendor rankings. Instances from private repos are closed-book (the origin 404s for tokenless agents) and that's the column to trust.
+Two structural facts to keep in mind. The compile probe deliberately throws away fixes where the new tests can't compile against the old interfaces, so the suite systematically excludes the hairy, architectural work where agents differ most. And instances whose tests reference the origin repo are open-book for any agent with network access, so those are marked `origin_visibility: public` and shouldn't be used for cross-vendor rankings. Instances from private repos are closed-book (the origin 404s for tokenless agents), and that's the column to trust.
 
 Bug-fix diagnosis tasks do exist here, but only for repos where contributors link issues in their PRs (`Fixes #N`) — the instruction then comes from the issue text instead of the fix description. 12 of the 294 instances are in that class. If your team adopts issue linkage, your own mined suite grows that class automatically.
 
