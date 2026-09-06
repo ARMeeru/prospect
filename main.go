@@ -8,11 +8,12 @@ import (
 	"strings"
 )
 
-const usageLine = "usage: prospect <mine|reverify|deleak|issues|dedup|audit|migrate> ..."
+const usageLine = "usage: prospect <build|mine|reverify|deleak|issues|dedup|audit|migrate> ..."
 
 // commands maps subcommand names to their entry points. Usage errors print
 // and exit 2 inside the command; runtime errors return and exit 1 in main.
 var commands = map[string]func(args []string) error{
+	"build":    cmdBuild,
 	"mine":     cmdMine,
 	"reverify": cmdReverify,
 	"deleak":   cmdDeleak,
@@ -62,6 +63,52 @@ func parseHoisted(fs *flag.FlagSet, args []string, valueFlags map[string]bool) [
 	}
 	fs.Parse(pos)
 	return fs.Args()
+}
+
+func cmdBuild(args []string) error {
+	fs := flag.NewFlagSet("build", flag.ExitOnError)
+	out := fs.String("out", "", "output directory for the task suite")
+	since := fs.String("since", "", "only commits after this date (YYYY-MM-DD)")
+	limit := fs.Int("limit", 0, "max test-touching commits to examine (0 = all)")
+	public := fs.Bool("public", false, "origin is public (open-book); recorded in instance metadata")
+	skip := fs.String("skip", "", "comma-separated stages to skip (mine,reverify,deleak,issues,dedup)")
+	jobs := fs.Int("jobs", 2, "concurrent reverify builds/trials")
+	var envs kvList
+	fs.Var(&envs, "env", "test env var KEY=VALUE (repeatable)")
+	pos := parseHoisted(fs, args, map[string]bool{"out": true, "since": true, "limit": true, "skip": true, "jobs": true, "env": true})
+	if len(pos) < 1 || *out == "" {
+		fmt.Fprintln(os.Stderr, "usage: prospect build <repo> --out <dir> [--since DATE] [--limit N] [--public] [--skip stage,...] [--env KEY=VALUE]...")
+		os.Exit(2)
+	}
+	skips := map[string]bool{}
+	for _, s := range strings.Split(*skip, ",") {
+		s = strings.TrimSpace(s)
+		if s == "" {
+			continue
+		}
+		known := false
+		for _, st := range buildStages {
+			if s == st {
+				known = true
+				break
+			}
+		}
+		if !known {
+			fmt.Fprintf(os.Stderr, "error: unknown stage %q in --skip\n", s)
+			os.Exit(2)
+		}
+		skips[s] = true
+	}
+	env := map[string]string{}
+	for _, kv := range envs {
+		if i := strings.Index(kv, "="); i > 0 {
+			env[kv[:i]] = kv[i+1:]
+		}
+	}
+	return runBuild(buildConfig{
+		Repo: pos[0], Out: *out, Since: *since, Limit: *limit,
+		Public: *public, Skip: skips, Env: env, Jobs: *jobs,
+	})
 }
 
 func cmdMine(args []string) error {
