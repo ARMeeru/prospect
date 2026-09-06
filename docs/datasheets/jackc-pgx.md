@@ -24,14 +24,14 @@ Mined task instances for coding-agent evaluation, generated from the public fix 
 
 ## Verification status
 
-- **Fail-before/pass-after**: every instance's reference tests were run against the pre-fix source (must fail) and the post-fix source (must pass), at mine time on the host. Note: pgx reference tests use mocks and fakes rather than live databases, consistent with the repo's own test seams.
-- **Failure witness**: recorded per instance; the base-direction failure is assertion-level (`--- FAIL: <expected test>`), not a build or environment error.
-- **Container re-verification**: complete. 30 of 31 instances container-verified; 1 discarded because its base-direction failure was not reliably observable in-container (a base-run flake), per the conservative discard policy.
+- Fail-before/pass-after: every instance's reference tests were run against the pre-fix source (must fail) and the post-fix source (must pass), at mine time on the host. Note: pgx reference tests use mocks and fakes rather than live databases, consistent with the repo's own test seams.
+- Failure witness: recorded per instance; the base-direction failure is assertion-level (`--- FAIL: <expected test>`), not a build or environment error.
+- Container re-verification: complete. 30 of 31 instances container-verified; 1 discarded because its base-direction failure was not reliably observable in-container (a base-run flake), per the conservative discard policy.
 
 ## Contamination and leakage
 
 - Mined inside a post-cutoff window; contamination is a property of the model-instance pair, so base-commit dates are in each task's metadata for per-model windowing.
-- Source repo is public: instances are **open-book by policy** (`origin_visibility: public`). Default agent egress allows fetching the origin. Use for within-agent regression and pipeline work, not cross-vendor ranking.
+- Source repo is public: instances are open-book by policy (`origin_visibility: public`). Default agent egress allows fetching the origin. Use for within-agent regression and pipeline work, not cross-vendor ranking.
 
 ## What the tasks are
 
