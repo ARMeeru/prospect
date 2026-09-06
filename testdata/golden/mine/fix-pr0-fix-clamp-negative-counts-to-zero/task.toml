@@ -1,0 +1,17 @@
+schema_version = "1"
+
+[task]
+name = "prospect/fix-pr0-fix-clamp-negative-counts-to-zero"
+version = "1.0.0"
+description = "fix: clamp negative counts to zero"
+authors = [{ name = "prospect" }]
+keywords = ["mined", "go", "fixturerepo"]
+
+[verifier]
+timeout_sec = 900
+
+[agent]
+timeout_sec = 1800
+
+[metadata]
+verified_host_only = true

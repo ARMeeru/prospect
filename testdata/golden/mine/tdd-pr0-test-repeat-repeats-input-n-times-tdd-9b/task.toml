@@ -1,0 +1,17 @@
+schema_version = "1"
+
+[task]
+name = "prospect/tdd-pr0-test-repeat-repeats-input-n-times-tdd-9b"
+version = "1.0.0"
+description = "test: repeat repeats input n times [tdd→9b278612]"
+authors = [{ name = "prospect" }]
+keywords = ["mined", "go", "fixturerepo"]
+
+[verifier]
+timeout_sec = 900
+
+[agent]
+timeout_sec = 1800
+
+[metadata]
+verified_host_only = true

@@ -1,0 +1,15 @@
+{
+  "base": "58f8d6bf4f5090154f768f256f363c6111932a14",
+  "fix": "9b278612e8324a1e49217c01f2df25e11fa5a881",
+  "kind": "tdd",
+  "pr": 0,
+  "subject": "test: repeat repeats input n times [tdd→9b278612]",
+  "test_files": [
+    "repeat_test.go"
+  ],
+  "test_names": [
+    "TestRepeat"
+  ],
+  "verified": true,
+  "verifier_lint": null
+}
