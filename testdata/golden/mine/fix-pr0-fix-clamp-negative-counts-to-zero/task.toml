@@ -15,3 +15,4 @@ timeout_sec = 1800
 
 [metadata]
 verified_host_only = true
+instance_id = "fix-pr0-fix-clamp-negative-counts-to-zero"

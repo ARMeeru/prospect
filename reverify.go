@@ -42,15 +42,22 @@ type rvResult struct {
 }
 
 func runReverify(roots []string, jobs int, publicRoots map[string]bool) error {
-	var dirs []string
-	for _, root := range roots {
-		// Docker volume mounts require absolute paths; resolve early so a
-		// relative CLI argument cannot poison every trial.
+	// Docker volume mounts require absolute paths; resolve every root early
+	// so a relative CLI argument cannot poison trials or report filtering.
+	absRoots := make([]string, len(roots))
+	absPublic := map[string]bool{}
+	for i, root := range roots {
 		abs, err := filepath.Abs(root)
 		if err != nil {
 			return err
 		}
-		root = abs
+		absRoots[i] = abs
+		if publicRoots[filepath.Clean(root)] {
+			absPublic[abs] = true
+		}
+	}
+	var dirs []string
+	for _, root := range absRoots {
 		entries, err := os.ReadDir(root)
 		if err != nil {
 			return err
@@ -58,7 +65,13 @@ func runReverify(roots []string, jobs int, publicRoots map[string]bool) error {
 		for _, e := range entries {
 			if e.IsDir() {
 				if _, err := os.Stat(filepath.Join(root, e.Name(), "task.toml")); err == nil {
-					dirs = append(dirs, filepath.Join(root, e.Name()))
+					dir := filepath.Join(root, e.Name())
+					// Refuse schema-1 metadata before spending container time;
+					// task dirs without meta.json stay tolerated.
+					if _, err := loadMeta(dir); err != nil && !os.IsNotExist(err) {
+						return err
+					}
+					dirs = append(dirs, dir)
 				}
 			}
 		}
@@ -84,8 +97,8 @@ func runReverify(roots []string, jobs int, publicRoots map[string]bool) error {
 	}
 	wg.Wait()
 
-	for _, root := range roots {
-		writeRVReport(root, results, publicRoots[root])
+	for _, root := range absRoots {
+		writeRVReport(root, results, absPublic[root])
 	}
 	counts := map[string]int{}
 	for _, r := range results {
@@ -99,16 +112,7 @@ func reverifyOne(dir string) rvResult {
 	name := filepath.Base(dir)
 	res := rvResult{Dir: dir}
 
-	metaRaw, err := os.ReadFile(filepath.Join(dir, "meta.json"))
-	var meta struct {
-		Subject    string   `json:"subject"`
-		TestNames  []string `json:"test_names"`
-		TestFiles  []string `json:"test_files"`
-		Kind       string   `json:"kind"`
-	}
-	if err == nil {
-		json.Unmarshal(metaRaw, &meta)
-	}
+	meta, _ := loadMeta(dir) // schema checked by runReverify; zero Meta when meta.json is absent
 	trials := 3
 	if flakeRe.MatchString(strings.ToLower(meta.Subject + " " + strings.Join(meta.TestNames, " "))) {
 		trials = 5
@@ -294,37 +298,23 @@ func writeRVReport(root string, results []rvResult, public bool) {
 	if public {
 		vis = "public"
 	}
+	counts := map[string]int{}
 	for _, r := range mine {
+		counts[r.Verdict]++
 		if !r.BuildOK {
 			continue
 		}
-		verified := r.Verdict == "container-verified"
-		if metaRaw, err := os.ReadFile(filepath.Join(r.Dir, "meta.json")); err == nil {
-			var mm map[string]any
-			json.Unmarshal(metaRaw, &mm)
-			if mm == nil {
-				mm = map[string]any{}
-			}
-			mm["container_verified"] = verified
-			mm["origin_visibility"] = vis
-			if r.Witness != "" {
-				mm["failure_witness"] = r.Witness
-			}
-			delete(mm, "verified_host_only")
-			if mj, err := json.MarshalIndent(mm, "", "  "); err == nil {
-				os.WriteFile(filepath.Join(r.Dir, "meta.json"), mj, 0o644)
-			}
+		m, err := loadMeta(r.Dir)
+		if err != nil {
+			continue // no meta.json: nothing to backfill
 		}
-		if tomlRaw, err := os.ReadFile(filepath.Join(r.Dir, "task.toml")); err == nil {
-			t := string(tomlRaw)
-			t = strings.Replace(t, "verified_host_only = true\n", "", 1)
-			if !strings.Contains(t, "origin_visibility") {
-				t = strings.Replace(t, "[metadata]", "[metadata]\norigin_visibility = \""+vis+"\"", 1)
-			}
-			if verified && !strings.Contains(t, "container_verified") {
-				t = strings.Replace(t, "[metadata]", "[metadata]\ncontainer_verified = true", 1)
-			}
-			os.WriteFile(filepath.Join(r.Dir, "task.toml"), []byte(t), 0o644)
+		m.ContainerVerified = r.Verdict == "container-verified"
+		m.OriginVisibility = vis
+		if r.Witness != "" {
+			m.FailureWitness = r.Witness
 		}
+		m.StagesRun = addStage(m.StagesRun, "reverify")
+		saveMeta(r.Dir, m)
 	}
+	recordStage(root, "reverify", "ok", "", counts)
 }

@@ -1,0 +1,19 @@
+schema_version = "1"
+source = "https://github.com/gin-gonic/gin/pull/2169"
+
+[task]
+name = "prospect/fix-pr2169-fix-binding-empty-value-error-2169"
+version = "1.0.0"
+description = "fix(binding): empty value error (#2169)"
+authors = [{ name = "prospect" }]
+keywords = ["mined", "go", "funnel-gin"]
+
+[verifier]
+timeout_sec = 900
+
+[agent]
+timeout_sec = 1800
+
+[metadata]
+verified_host_only = true
+instruction_class = "change-spec"

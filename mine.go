@@ -93,6 +93,22 @@ func mine(cfg mineConfig) error {
 	}
 
 	os.MkdirAll(cfg.Out, 0o755)
+	mf, err := loadManifest(cfg.Out)
+	if err != nil {
+		return err
+	}
+	if mf == nil {
+		mf = &suiteManifest{}
+	}
+	mf.Schema = manifestSchema
+	mf.RepoName = repoName
+	mf.RepoURL = repoURL
+	mf.RepoPath = repo
+	mf.Since = cfg.Since
+	mf.Limit = cfg.Limit
+	if len(cfg.Env) > 0 {
+		mf.Env = cfg.Env
+	}
 	var rows []resultRow
 	emitted := 0
 	verified := 0
@@ -176,6 +192,17 @@ func mine(cfg mineConfig) error {
 	}
 
 	if err := writeReports(cfg, repoName, rows, len(cands), mineable, compiled, verified, emitted); err != nil {
+		return err
+	}
+	mf.setStage("mine", "ok", "", map[string]int{
+		"candidates": len(cands), "mineable": mineable, "compiled": compiled,
+		"verified": verified, "emitted": emitted,
+	})
+	if mf.Totals == nil {
+		mf.Totals = map[string]int{}
+	}
+	mf.Totals["emitted"] = emitted
+	if err := mf.save(cfg.Out); err != nil {
 		return err
 	}
 	fmt.Printf("\nDone: %d candidates, %d compiled, %d verified, %d emitted → %s\n", len(cands), compiled, verified, emitted, cfg.Out)

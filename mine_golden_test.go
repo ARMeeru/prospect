@@ -22,6 +22,11 @@ func dirManifest(t *testing.T, root string) string {
 		if err != nil || d.IsDir() {
 			return err
 		}
+		// suite.json carries timestamps and absolute repo paths; it is
+		// asserted structurally by the tests, not hashed.
+		if path == filepath.Join(root, "suite.json") {
+			return nil
+		}
 		data, err := os.ReadFile(path)
 		if err != nil {
 			return err
@@ -106,5 +111,24 @@ func TestMineFixtureGolden(t *testing.T) {
 			continue
 		}
 		goldenCompare(t, filepath.Join("testdata", "golden", "mine", filepath.FromSlash(rel)), data)
+	}
+
+	// suite.json: structural assertions (timestamps and paths vary).
+	mf, err := loadManifest(out)
+	if err != nil || mf == nil {
+		t.Fatalf("suite.json missing or unreadable: %v", err)
+	}
+	if mf.RepoName != "fixturerepo" || mf.RepoPath == "" {
+		t.Errorf("manifest repo identity = %q / %q", mf.RepoName, mf.RepoPath)
+	}
+	st := mf.stage("mine")
+	if st == nil || st.Status != "ok" {
+		t.Fatalf("manifest mine stage = %+v", st)
+	}
+	wantCounts := map[string]int{"candidates": 5, "mineable": 4, "compiled": 3, "verified": 3, "emitted": 3}
+	for k, v := range wantCounts {
+		if st.Counts[k] != v {
+			t.Errorf("mine stage count %s = %d, want %d", k, st.Counts[k], v)
+		}
 	}
 }

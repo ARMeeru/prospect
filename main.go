@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const usageLine = "usage: prospect <mine|reverify|deleak|issues|dedup|audit> ..."
+const usageLine = "usage: prospect <mine|reverify|deleak|issues|dedup|audit|migrate> ..."
 
 // commands maps subcommand names to their entry points. Usage errors print
 // and exit 2 inside the command; runtime errors return and exit 1 in main.
@@ -19,6 +19,7 @@ var commands = map[string]func(args []string) error{
 	"issues":   cmdIssues,
 	"dedup":    cmdDedup,
 	"audit":    cmdAudit,
+	"migrate":  cmdMigrate,
 }
 
 func main() {
@@ -139,6 +140,16 @@ func cmdDedup(args []string) error {
 		os.Exit(2)
 	}
 	return runDedup(fs.Arg(0))
+}
+
+func cmdMigrate(args []string) error {
+	fs := flag.NewFlagSet("migrate", flag.ExitOnError)
+	fs.Parse(args)
+	if fs.NArg() < 1 {
+		fmt.Fprintln(os.Stderr, "usage: prospect migrate <tasks-root>")
+		os.Exit(2)
+	}
+	return runMigrate(fs.Arg(0))
 }
 
 func cmdAudit(args []string) error {

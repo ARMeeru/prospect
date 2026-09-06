@@ -1,0 +1,16 @@
+{
+  "base": "fad706f1216e6d12bdd51d28d5a40ec27e6c6453",
+  "cluster": "c01",
+  "fix": "b917b14ff9d189f16a7492be79d123a47806ee19",
+  "instruction_class": "change-spec",
+  "kind": "fix",
+  "pr": 2169,
+  "subject": "fix(binding): empty value error (#2169)",
+  "test_files": [
+    "binding/form_mapping_test.go"
+  ],
+  "test_names": [
+    "TestMappingTimeUnixNano"
+  ],
+  "verified": true
+}

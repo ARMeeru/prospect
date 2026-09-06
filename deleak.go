@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -70,24 +69,20 @@ func runDeleak(root, repo, repoName string) error {
 		return err
 	}
 	fmt.Printf("%-60s %-8s %s\n", "task", "flagged", "symbols-in-instruction")
+	flaggedCount, total := 0, 0
 	for _, e := range entries {
 		dir := filepath.Join(root, e.Name())
 		if !e.IsDir() {
 			continue
 		}
-		metaRaw, err := os.ReadFile(filepath.Join(dir, "meta.json"))
+		meta, err := loadMeta(dir)
 		if err != nil {
-			continue
+			if os.IsNotExist(err) {
+				continue
+			}
+			return err // schema-1 metadata: run prospect migrate first
 		}
-		var meta struct {
-			Base      string   `json:"base_sha"`
-			Fix       string   `json:"fix_sha"`
-			Subject   string   `json:"subject"`
-			TestFiles []string `json:"test_files"`
-		}
-		if err := json.Unmarshal(metaRaw, &meta); err != nil {
-			continue
-		}
+		total++
 
 		// all non-test files the fix changed
 		files, _ := changedFiles(repo, meta.Fix)
@@ -136,23 +131,14 @@ func runDeleak(root, repo, repoName string) error {
 		verbs := mechanismVerbRe.FindAllString(instrText, -1)
 		verbHit := len(verbs) > 0
 
-		// update meta.json
-		var mm map[string]any
-		json.Unmarshal(metaRaw, &mm)
-		mm["instruction_class"] = "unclassified"
-		mm["leak_flag"] = len(hits) > 0 || verbHit
-		mm["leak_symbols"] = hits
-		mm["leak_verbs"] = verbs
-		mm["changed_symbols"] = symbols
-		mj, _ := json.MarshalIndent(mm, "", "  ")
-		os.WriteFile(filepath.Join(dir, "meta.json"), mj, 0o644)
-
-		// task.toml [metadata]
-		tomlPath := filepath.Join(dir, "task.toml")
-		toml, _ := os.ReadFile(tomlPath)
-		if !strings.Contains(string(toml), "instruction_class") {
-			t := strings.Replace(string(toml), "verified_host_only = true", "verified_host_only = true\ninstruction_class = \"unclassified\"", 1)
-			os.WriteFile(tomlPath, []byte(t), 0o644)
+		meta.InstructionClass = "unclassified"
+		meta.LeakFlag = len(hits) > 0 || verbHit
+		meta.LeakSymbols = hits
+		meta.LeakVerbs = verbs
+		meta.ChangedSymbols = symbols
+		meta.StagesRun = addStage(meta.StagesRun, "deleak")
+		if err := saveMeta(dir, meta); err != nil {
+			return err
 		}
 
 		flag := "-"
@@ -168,8 +154,12 @@ func runDeleak(root, repo, repoName string) error {
 			}
 			reason += "verbs: " + strings.Join(lowercaseUnique(verbs), ",")
 		}
+		if flag == "FLAG" {
+			flaggedCount++
+		}
 		fmt.Printf("%-60s %-8s %s\n", e.Name(), flag, reason)
 	}
+	recordStage(root, "deleak", "ok", "", map[string]int{"instances": total, "flagged": flaggedCount})
 	fmt.Println("\nclassify each FLAG row by hand: change-spec (names the change) vs bug-report (names the behavior); set instruction_class in meta.json + task.toml accordingly.")
 	return nil
 }

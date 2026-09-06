@@ -80,6 +80,7 @@ func runIssues(root string) error {
 	if err != nil {
 		return err
 	}
+	classCounts := map[string]int{}
 	for _, e := range entries {
 		dir := filepath.Join(root, e.Name())
 		if !e.IsDir() {
@@ -89,18 +90,28 @@ func runIssues(root string) error {
 		if err != nil {
 			continue
 		}
-		src := regexp.MustCompile(`source = "([^"]+)"`).FindStringSubmatch(string(tomlRaw))
-		metaRaw, _ := os.ReadFile(filepath.Join(dir, "meta.json"))
-		var meta struct {
-			PR int `json:"pr"`
+		meta, err := loadMeta(dir)
+		if err != nil {
+			if os.IsNotExist(err) {
+				continue
+			}
+			return err // schema-1 metadata: run prospect migrate first
 		}
-		json.Unmarshal(metaRaw, &meta)
+		src := regexp.MustCompile(`source = "([^"]+)"`).FindStringSubmatch(string(tomlRaw))
+		setClass := func(cls string) error {
+			classCounts[cls]++
+			meta.InstructionClass = cls
+			meta.StagesRun = addStage(meta.StagesRun, "issues")
+			return saveMeta(dir, meta)
+		}
 		if src == nil || meta.PR == 0 {
+			classCounts["change-spec"]++
 			fmt.Printf("change-spec | %s (no source/pr)\n", e.Name())
 			continue
 		}
 		sm := ghSlugRe.FindStringSubmatch(src[1] + "/")
 		if sm == nil {
+			classCounts["change-spec"]++
 			fmt.Printf("change-spec | %s (non-github source)\n", e.Name())
 			continue
 		}
@@ -126,53 +137,20 @@ func runIssues(root string) error {
 		if newInstr != "" {
 			os.WriteFile(filepath.Join(dir, "instruction.md"), []byte(newInstr), 0o644)
 		}
-		// tag class in meta.json + task.toml
-		var mm map[string]any
-		if metaRaw, err := os.ReadFile(filepath.Join(dir, "meta.json")); err == nil {
-			json.Unmarshal(metaRaw, &mm)
-			if mm == nil {
-				mm = map[string]any{}
-			}
-			mm["instruction_class"] = cls
-			if mj, err := json.MarshalIndent(mm, "", "  "); err == nil {
-				os.WriteFile(filepath.Join(dir, "meta.json"), mj, 0o644)
-			}
-		}
-		if tomlRaw, err := os.ReadFile(filepath.Join(dir, "task.toml")); err == nil {
-			t := string(tomlRaw)
-			if strings.Contains(t, "instruction_class") {
-				re := regexp.MustCompile(`instruction_class = "[^"]*"`)
-				t = re.ReplaceAllString(t, `instruction_class = "`+cls+`"`)
-			} else {
-				t = strings.Replace(t, "verified_host_only = true", "verified_host_only = true\ninstruction_class = \""+cls+"\"", 1)
-			}
-			os.WriteFile(filepath.Join(dir, "task.toml"), []byte(t), 0o644)
+		if err := setClass(cls); err != nil {
+			return err
 		}
 	}
+	recordStage(root, "issues", "ok", "", classCounts)
 	return nil
 }
 
-// repoDisplayName recovers the repo display name from any sibling meta's
-// keywords, falling back to the root dir name.
+// repoDisplayName recovers the repo display name from the suite manifest,
+// falling back to the root dir name. (The old sibling-meta keyword scan
+// never fired: meta.json has no keywords field.)
 func repoDisplayName(root string) string {
-	entries, _ := os.ReadDir(root)
-	for _, e := range entries {
-		raw, err := os.ReadFile(filepath.Join(root, e.Name(), "meta.json"))
-		if err != nil {
-			continue
-		}
-		var m struct {
-			Keywords []string `json:"keywords"`
-		}
-		if json.Unmarshal(raw, &m) == nil {
-			for i, k := range m.Keywords {
-				if k == "mined" || k == "go" {
-					continue
-				}
-				_ = i
-				return k
-			}
-		}
+	if m, err := loadManifest(root); err == nil && m != nil && m.RepoName != "" {
+		return m.RepoName
 	}
 	return filepath.Base(root)
 }

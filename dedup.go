@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -26,14 +25,14 @@ func runDedup(root string) error {
 		if !e.IsDir() {
 			continue
 		}
-		raw, err := os.ReadFile(filepath.Join(root, e.Name(), "meta.json"))
+		m, err := loadMeta(filepath.Join(root, e.Name()))
 		if err != nil {
-			continue
+			if os.IsNotExist(err) {
+				continue
+			}
+			return err // schema-1 metadata: run prospect migrate first
 		}
-		var m struct {
-			TestFiles []string `json:"test_files"`
-		}
-		if json.Unmarshal(raw, &m) != nil || len(m.TestFiles) == 0 {
+		if len(m.TestFiles) == 0 {
 			continue
 		}
 		fs := map[string]bool{}
@@ -86,24 +85,23 @@ func runDedup(root string) error {
 		members := clusters[k]
 		id := fmt.Sprintf("c%02d", idx+1)
 		sort.Strings(members)
-		for _, m := range members {
-			p := filepath.Join(root, m, "meta.json")
-			if raw, err := os.ReadFile(p); err == nil {
-				var mm map[string]any
-				json.Unmarshal(raw, &mm)
-				if mm == nil {
-					mm = map[string]any{}
-				}
-				mm["cluster"] = id
-				if mj, err := json.MarshalIndent(mm, "", "  "); err == nil {
-					os.WriteFile(p, mj, 0o644)
-				}
+		for _, name := range members {
+			dir := filepath.Join(root, name)
+			m, err := loadMeta(dir)
+			if err != nil {
+				continue
+			}
+			m.Cluster = id
+			m.StagesRun = addStage(m.StagesRun, "dedup")
+			if err := saveMeta(dir, m); err != nil {
+				return err
 			}
 		}
 		if len(members) > 1 {
 			fmt.Printf("%s (%d): %s\n", id, len(members), strings.Join(members, ", "))
 		}
 	}
+	recordStage(root, "dedup", "ok", "", map[string]int{"instances": len(tasks), "clusters": len(keys)})
 	fmt.Printf("\ntasks: %d → clusters (effective-N): %d\n", len(tasks), len(keys))
 	return nil
 }
