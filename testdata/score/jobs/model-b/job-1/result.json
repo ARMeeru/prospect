@@ -1,0 +1,34 @@
+{
+  "stats": {
+    "evals": {
+      "claude-code__claude-opus-5__fixture-suite": {
+        "reward_stats": {
+          "reward": {
+            "0.0": [
+              "alpha-pr1-fix-date-parse-clamps-__t3",
+              "beta-pr3-fix-router-panic-on-nil__t1",
+              "beta-pr4-fix-router-panic-fallba__t2",
+              "beta-pr4-fix-router-panic-fallba__t3",
+              "beta-pr5-fix-router-panic-double__t1",
+              "beta-pr5-fix-router-panic-double__t2",
+              "beta-pr5-fix-router-panic-double__t3",
+              "gamma-pr6-fix-encoder-escapes-co__t1",
+              "gamma-pr6-fix-encoder-escapes-co__t3"
+            ],
+            "1.0": [
+              "alpha-pr1-fix-date-parse-clamps-__t1",
+              "alpha-pr1-fix-date-parse-clamps-__t2",
+              "alpha-pr2-fix-date-parse-rounds-__t1",
+              "alpha-pr2-fix-date-parse-rounds-__t2",
+              "alpha-pr2-fix-date-parse-rounds-__t3",
+              "beta-pr3-fix-router-panic-on-nil__t2",
+              "beta-pr3-fix-router-panic-on-nil__t3",
+              "beta-pr4-fix-router-panic-fallba__t1",
+              "gamma-pr6-fix-encoder-escapes-co__t2"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

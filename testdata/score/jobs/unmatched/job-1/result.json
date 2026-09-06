@@ -1,0 +1,15 @@
+{
+  "stats": {
+    "evals": {
+      "claude-code__m__s": {
+        "reward_stats": {
+          "reward": {
+            "1.0": [
+              "zeta-pr9-missing-instance__t1"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,64 @@
+[
+  {
+    "kind": "",
+    "base_sha": "",
+    "fix_sha": "",
+    "subject": "Merge fictional fork",
+    "pr": 0,
+    "compiles": false,
+    "before_passes": false,
+    "after_passes": false,
+    "verified": false,
+    "emitted": false,
+    "skip": "merge/invalid topology"
+  },
+  {
+    "kind": "fix",
+    "base_sha": "9b278612e8324a1e49217c01f2df25e11fa5a881",
+    "fix_sha": "bd2837918b0bd2009f647a0fd5a59d3fae273d12",
+    "subject": "fix: add shout helper",
+    "pr": 0,
+    "compiles": false,
+    "before_passes": false,
+    "after_passes": false,
+    "verified": false,
+    "emitted": false,
+    "skip": "compile-coupled: .: # example.com/fixture [example.com/fixture.test] | ./shout_test.go:6:12: undefined: Shout"
+  },
+  {
+    "kind": "tdd",
+    "base_sha": "58f8d6bf4f5090154f768f256f363c6111932a14",
+    "fix_sha": "9b278612e8324a1e49217c01f2df25e11fa5a881",
+    "subject": "test: repeat repeats input n times [tdd→9b278612]",
+    "pr": 0,
+    "compiles": true,
+    "before_passes": false,
+    "after_passes": true,
+    "verified": true,
+    "emitted": true
+  },
+  {
+    "kind": "fix",
+    "base_sha": "ad06a8d97598f722fc54f1d1ab2f47898e436cd1",
+    "fix_sha": "d1c16e8b600ccb5a99a1d23428e274d43c4c0783",
+    "subject": "fix: clamp negative counts to zero",
+    "pr": 0,
+    "compiles": true,
+    "before_passes": false,
+    "after_passes": true,
+    "verified": true,
+    "emitted": true
+  },
+  {
+    "kind": "fix",
+    "base_sha": "22b9ec54c3c88ad5dcff38d11e9be7d973f272ad",
+    "fix_sha": "ad06a8d97598f722fc54f1d1ab2f47898e436cd1",
+    "subject": "feat: greet includes the name",
+    "pr": 0,
+    "compiles": true,
+    "before_passes": false,
+    "after_passes": true,
+    "verified": true,
+    "emitted": true
+  }
+]

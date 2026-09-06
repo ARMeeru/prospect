@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -52,7 +51,6 @@ func emitTask(outRoot, repo, repoName, repoURL string, cand candidate, finalEnv 
 			fmt.Fprintf(&toml, "%s = %q\n", k, finalEnv[k])
 		}
 	}
-	toml.WriteString("\n[metadata]\nverified_host_only = true\n")
 	if err := os.WriteFile(filepath.Join(dir, "task.toml"), []byte(toml.String()), 0o644); err != nil {
 		return "", err
 	}
@@ -116,15 +114,21 @@ cd /app && go build ./... || true
 		return "", err
 	}
 
-	// meta.json (miner bookkeeping, not part of Harbor format)
-	meta, _ := json.MarshalIndent(map[string]any{
-		"kind": cand.Kind, "base": cand.BaseSHA, "fix": cand.FixSHA,
-		"subject": cand.Subject, "pr": cand.PRNumber,
-		"test_files": cand.TestFiles, "test_names": cand.TestNames,
-		"verifier_lint": cand.VerifierLint,
-		"verified": true,
-	}, "", "  ")
-	if err := os.WriteFile(filepath.Join(dir, "meta.json"), meta, 0o644); err != nil {
+	// meta.json (miner bookkeeping, not part of Harbor format) plus the
+	// generated [metadata] section, including the canonical join key.
+	m := Meta{
+		InstanceID:   cand.id(),
+		Kind:         string(cand.Kind),
+		Base:         cand.BaseSHA,
+		Fix:          cand.FixSHA,
+		Subject:      cand.Subject,
+		PR:           cand.PRNumber,
+		TestFiles:    cand.TestFiles,
+		TestNames:    cand.TestNames,
+		VerifierLint: cand.VerifierLint,
+		StagesRun:    []string{"mine"},
+	}
+	if err := saveMeta(dir, m); err != nil {
 		return "", err
 	}
 	return dir, nil

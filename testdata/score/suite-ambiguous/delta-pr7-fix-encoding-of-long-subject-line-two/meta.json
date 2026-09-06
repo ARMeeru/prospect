@@ -1,0 +1,24 @@
+{
+  "base": "0000000000000000000000000000000000000088",
+  "cluster": "c01",
+  "container_verified": true,
+  "fix": "0000000000000000000000000000000000000104",
+  "instance_id": "delta-pr7-fix-encoding-of-long-subject-line-two",
+  "kind": "fix",
+  "leak_flag": false,
+  "origin_visibility": "public",
+  "pr": 8,
+  "schema": 2,
+  "stages_run": [
+    "mine",
+    "reverify",
+    "dedup"
+  ],
+  "subject": "fix: encoding of long subject line",
+  "test_files": [
+    "enc/enc_test.go"
+  ],
+  "test_names": [
+    "TestEncoding"
+  ]
+}

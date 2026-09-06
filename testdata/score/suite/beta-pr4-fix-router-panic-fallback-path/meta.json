@@ -1,0 +1,24 @@
+{
+  "base": "0000000000000000000000000000000000000044",
+  "cluster": "c02",
+  "container_verified": true,
+  "fix": "0000000000000000000000000000000000000052",
+  "instance_id": "beta-pr4-fix-router-panic-fallback-path",
+  "kind": "fix",
+  "leak_flag": false,
+  "origin_visibility": "public",
+  "pr": 4,
+  "schema": 2,
+  "stages_run": [
+    "mine",
+    "reverify",
+    "dedup"
+  ],
+  "subject": "fix: router panic fallback path",
+  "test_files": [
+    "router/route_test.go"
+  ],
+  "test_names": [
+    "TestRouterFallbackPath"
+  ]
+}

@@ -31,11 +31,14 @@ To show the whole loop working end to end, we ran a 4-week pre-registered compar
 
 ```bash
 go build -o prospect .
+./prospect build /path/to/repo --out ./suite   # full pipeline: mine, reverify, deleak, issues, dedup
 ./prospect mine /path/to/repo --out ./mined [--since 2025-12-01] [--limit 90] [--probe-only] [--env KEY=VALUE ...]
 ./prospect reverify ./mined --jobs 2          # re-verify emitted artifacts in their containers
 ./prospect deleak ./mined --repo /path/to/repo --name repo  # strip test-authoring directives, flag leak suspects
 ./prospect issues ./mined                      # rewrite instructions from linked issue bodies
 ./prospect dedup ./mined                       # cluster instances sharing reference tests
+./prospect score --suite ./suite SONNET=/jobs/a OPUS=/jobs/b  # cluster-weighted scorecard from Harbor job dirs
+./prospect migrate ./mined                     # lift schema-1 task metadata to schema 2
 ./prospect audit <harbor-jobs-dir> --origin <repo-slug>  # leak audit for closed-book suites
 ```
 

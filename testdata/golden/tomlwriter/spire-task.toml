@@ -1,0 +1,18 @@
+schema_version = "1"
+source = "https://github.com/spiffe/spire/pull/6751"
+
+[task]
+name = "prospect/fix-pr6751-server-allow-azure-managed-hsm-to-be-use"
+version = "1.0.0"
+description = "Server: Allow Azure Managed HSM to be used in the azurekeyvault key manager plugin (#6751)"
+authors = [{ name = "prospect" }]
+keywords = ["mined", "go", "spire-probe"]
+
+
+[verifier]
+timeout_sec = 900
+
+[metadata]
+container_verified = true
+origin_visibility = "public"
+instruction_class = "change-spec"
