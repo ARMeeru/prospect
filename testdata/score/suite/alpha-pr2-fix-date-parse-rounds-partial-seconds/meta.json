@@ -1,0 +1,24 @@
+{
+  "base": "0000000000000000000000000000000000000022",
+  "cluster": "c01",
+  "container_verified": true,
+  "fix": "0000000000000000000000000000000000000026",
+  "instance_id": "alpha-pr2-fix-date-parse-rounds-partial-seconds",
+  "kind": "fix",
+  "leak_flag": false,
+  "origin_visibility": "public",
+  "pr": 2,
+  "schema": 2,
+  "stages_run": [
+    "mine",
+    "reverify",
+    "dedup"
+  ],
+  "subject": "fix: date parse rounds partial seconds",
+  "test_files": [
+    "date/parse_test.go"
+  ],
+  "test_names": [
+    "TestParseRoundsPartialSeconds"
+  ]
+}

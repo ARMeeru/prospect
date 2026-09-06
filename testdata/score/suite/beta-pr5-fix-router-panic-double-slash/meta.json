@@ -1,0 +1,24 @@
+{
+  "base": "0000000000000000000000000000000000000055",
+  "cluster": "c02",
+  "container_verified": true,
+  "fix": "0000000000000000000000000000000000000065",
+  "instance_id": "beta-pr5-fix-router-panic-double-slash",
+  "kind": "fix",
+  "leak_flag": false,
+  "origin_visibility": "public",
+  "pr": 5,
+  "schema": 2,
+  "stages_run": [
+    "mine",
+    "reverify",
+    "dedup"
+  ],
+  "subject": "fix: router panic double slash",
+  "test_files": [
+    "router/route_test.go"
+  ],
+  "test_names": [
+    "TestRouterDoubleSlash"
+  ]
+}

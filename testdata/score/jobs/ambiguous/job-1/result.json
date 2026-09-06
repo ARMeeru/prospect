@@ -1,0 +1,15 @@
+{
+  "stats": {
+    "evals": {
+      "claude-code__m__s": {
+        "reward_stats": {
+          "reward": {
+            "1.0": [
+              "delta-pr7-fix-encoding-of-long-s__t1"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

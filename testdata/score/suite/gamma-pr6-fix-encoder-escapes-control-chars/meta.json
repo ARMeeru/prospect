@@ -1,0 +1,24 @@
+{
+  "base": "0000000000000000000000000000000000000066",
+  "cluster": "c03",
+  "container_verified": true,
+  "fix": "0000000000000000000000000000000000000078",
+  "instance_id": "gamma-pr6-fix-encoder-escapes-control-chars",
+  "kind": "fix",
+  "leak_flag": false,
+  "origin_visibility": "public",
+  "pr": 6,
+  "schema": 2,
+  "stages_run": [
+    "mine",
+    "reverify",
+    "dedup"
+  ],
+  "subject": "fix: encoder escapes control chars",
+  "test_files": [
+    "encoder/escape_test.go"
+  ],
+  "test_names": [
+    "TestEncoderEscapesControlChars"
+  ]
+}

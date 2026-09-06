@@ -1,0 +1,10 @@
+{
+  "public": true,
+  "repo_name": "fixture-suite",
+  "schema": 1,
+  "stages": [],
+  "totals": {
+    "clusters": 3,
+    "instances": 6
+  }
+}

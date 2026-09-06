@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const usageLine = "usage: prospect <build|mine|reverify|deleak|issues|dedup|audit|migrate> ..."
+const usageLine = "usage: prospect <build|mine|reverify|deleak|issues|dedup|audit|migrate|score> ..."
 
 // commands maps subcommand names to their entry points. Usage errors print
 // and exit 2 inside the command; runtime errors return and exit 1 in main.
@@ -21,6 +21,7 @@ var commands = map[string]func(args []string) error{
 	"dedup":    cmdDedup,
 	"audit":    cmdAudit,
 	"migrate":  cmdMigrate,
+	"score":    cmdScore,
 }
 
 func main() {
@@ -187,6 +188,37 @@ func cmdDedup(args []string) error {
 		os.Exit(2)
 	}
 	return runDedup(fs.Arg(0))
+}
+
+func cmdScore(args []string) error {
+	fs := flag.NewFlagSet("score", flag.ExitOnError)
+	suiteRoot := fs.String("suite", "", "tasks root the jobs were run against")
+	prices := fs.String("prices", "", "prices.json for cost accounting (optional)")
+	out := fs.String("out", "scorecard", "output file prefix (<prefix>.md, <prefix>.json)")
+	pos := parseHoisted(fs, args, map[string]bool{"suite": true, "prices": true, "out": true})
+	usage := func() {
+		fmt.Fprintln(os.Stderr, "usage: prospect score --suite <tasks-root> LABEL=<jobs-dir> [LABEL=<jobs-dir> ...] [--prices prices.json] [--out prefix]")
+		os.Exit(2)
+	}
+	if *suiteRoot == "" || len(pos) < 1 {
+		usage()
+	}
+	seen := map[string]bool{}
+	var sweeps []sweepInput
+	for _, p := range pos {
+		i := strings.Index(p, "=")
+		if i <= 0 || i == len(p)-1 {
+			usage()
+		}
+		label, dir := p[:i], p[i+1:]
+		if seen[label] {
+			fmt.Fprintf(os.Stderr, "error: duplicate sweep label %q\n", label)
+			os.Exit(2)
+		}
+		seen[label] = true
+		sweeps = append(sweeps, sweepInput{Label: label, Dir: dir})
+	}
+	return runScore(*suiteRoot, sweeps, *prices, *out)
 }
 
 func cmdMigrate(args []string) error {
