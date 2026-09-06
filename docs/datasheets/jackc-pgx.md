@@ -26,7 +26,7 @@ Mined task instances for coding-agent evaluation, generated from the public fix 
 
 - **Fail-before/pass-after**: every instance's reference tests were run against the pre-fix source (must fail) and the post-fix source (must pass), at mine time on the host. Note: pgx reference tests use mocks and fakes rather than live databases, consistent with the repo's own test seams.
 - **Failure witness**: recorded per instance; the base-direction failure is assertion-level (`--- FAIL: <expected test>`), not a build or environment error.
-- **Container re-verification**: in progress (full suite, 31 instances). Status backfills into this datasheet.
+- **Container re-verification**: complete. 30 of 31 instances container-verified; 1 discarded because its base-direction failure was not reliably observable in-container (a base-run flake), per the conservative discard policy.
 
 ## Contamination and leakage
 
