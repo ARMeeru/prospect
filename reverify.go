@@ -44,6 +44,13 @@ type rvResult struct {
 func runReverify(roots []string, jobs int, publicRoots map[string]bool) error {
 	var dirs []string
 	for _, root := range roots {
+		// Docker volume mounts require absolute paths; resolve early so a
+		// relative CLI argument cannot poison every trial.
+		abs, err := filepath.Abs(root)
+		if err != nil {
+			return err
+		}
+		root = abs
 		entries, err := os.ReadDir(root)
 		if err != nil {
 			return err
